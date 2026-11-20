@@ -117,6 +117,7 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;border-top:1px solid va
 <nav class="tabs" id="tabs">
   <button data-t="ringkas" class="on">Ringkasan</button>
   <button data-t="biaya">Biaya &amp; Laba</button>
+  <button data-t="pnl">PnL (HPP)</button>
   <button data-t="produk">Produk</button>
   <button data-t="pembeli">Pembeli</button>
   <button data-t="status">Status Order</button>
@@ -141,6 +142,14 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;border-top:1px solid va
     <div class="card" id="c-iklan"></div>
   </div>
   <div class="card" style="margin-top:14px" id="c-pnl"></div>
+</section>
+<section class="tab" id="t-pnl">
+  <div class="kpis" id="kpis-h"></div>
+  <div class="grid2">
+    <div class="card" id="c-hpp1"></div>
+    <div class="card" id="c-hpp2"></div>
+  </div>
+  <div class="card" style="margin-top:14px" id="c-hpp3"></div>
 </section>
 <section class="tab" id="t-produk">
   <div class="grid2">
@@ -168,7 +177,7 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;border-top:1px solid va
 </div>
 <div id="tip" role="status"></div>
 <script>
-const SNAPSHOT = {"bulan": ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt"], "channels": ["SHOPEE", "TIKTOK", "TOKOPEDIA", "OFFLINE STORE", "OFFLINE PROJECT"], "omzet": {"SHOPEE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TIKTOK": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TOKOPEDIA": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE STORE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE PROJECT": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "bersih": {"SHOPEE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TIKTOK": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TOKOPEDIA": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE STORE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE PROJECT": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "orders": {"SHOPEE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TIKTOK": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TOKOPEDIA": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE STORE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE PROJECT": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "batal": {"SHOPEE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TIKTOK": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TOKOPEDIA": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE STORE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE PROJECT": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "status": {"Selesai": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Diproses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Dibatalkan": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "belum_cair_n": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "belum_cair_omzet": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "iklan_tags": ["Iklan TikTok", "Iklan Shopee", "Iklan Lazada", "Iklan CPAS", "Iklan IG Video", "Iklan TikTok Video", "Iklan KOL", "Iklan Lain-lain"], "iklan": {"Iklan TikTok": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan Shopee": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan Lazada": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan CPAS": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan IG Video": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan TikTok Video": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan KOL": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan Lain-lain": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "bahan_pokok": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "bahan_pendukung": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "ops": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "amal": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "gmv_max": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "catatan_shu": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "alokasi_bahan": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "pembeli": {"unik": 0, "berulang": 0, "omzet_total": 0, "omzet_berulang": 0, "order_total": 0, "order_berulang": 0, "top": [], "sebaran": {}}, "shopee_ulang_omzet": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "shopee_total_omzet": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "top_produk": [], "etalase": [], "sku_tak_terpetakan": 0, "snapshot_note": "Belum terhubung. Isi URL dan kunci di \"Sumber data\"."};
+const SNAPSHOT = {"bulan": ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt"], "channels": ["SHOPEE", "TIKTOK", "TOKOPEDIA", "OFFLINE STORE", "OFFLINE PROJECT"], "omzet": {"SHOPEE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TIKTOK": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TOKOPEDIA": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE STORE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE PROJECT": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "bersih": {"SHOPEE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TIKTOK": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TOKOPEDIA": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE STORE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE PROJECT": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "orders": {"SHOPEE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TIKTOK": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TOKOPEDIA": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE STORE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE PROJECT": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "batal": {"SHOPEE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TIKTOK": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "TOKOPEDIA": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE STORE": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "OFFLINE PROJECT": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "status": {"Selesai": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Diproses": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Dibatalkan": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "belum_cair_n": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "belum_cair_omzet": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "shopee_ulang_omzet": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "shopee_total_omzet": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "iklan_tags": ["Iklan TikTok", "Iklan Shopee", "Iklan Lazada", "Iklan CPAS", "Iklan IG Video", "Iklan TikTok Video", "Iklan KOL", "Iklan Lain-lain"], "iklan": {"Iklan TikTok": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan Shopee": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan Lazada": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan CPAS": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan IG Video": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan TikTok Video": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan KOL": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "Iklan Lain-lain": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "bahan_pokok": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "bahan_pendukung": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "ops": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "amal": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "gmv_max": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "diagnosa": {"orders_dibaca": 0, "orders_dilewati": 0, "offline_terbaca": 0, "biaya_dibaca": 0, "biaya_dilewati": 0, "contoh": []}, "catatan_shu": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "alokasi_bahan": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "pembeli": {"unik": 0, "berulang": 0, "omzet_total": 0, "omzet_berulang": 0, "order_total": 0, "order_berulang": 0, "top": [], "sebaran": {}}, "top_produk": [], "etalase": [], "hpp": {"ada": 0, "galat": "", "cogs": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "cogs_gratis": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "omzet_tercakup": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "flag": {"n": 0, "hpp": 0, "omzet": 0, "per_bulan": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "contoh": []}, "tanpa": {"baris": 0, "omzet": 0, "sku": []}, "etalase": []}, "snapshot_note": "Belum terhubung. Isi URL dan kunci di \"Sumber data\"."};
 let DATA = SNAPSHOT;
 const CHC = {'SHOPEE':'var(--s1)','TIKTOK':'var(--s2)','TOKOPEDIA':'var(--s3)','OFFLINE STORE':'var(--s4)','OFFLINE PROJECT':'#8a8a85'};
 const CHN = {'SHOPEE':'Shopee','TIKTOK':'TikTok','TOKOPEDIA':'Tokopedia','OFFLINE STORE':'Offline Store','OFFLINE PROJECT':'Offline Project (B2B)'};
@@ -344,11 +353,53 @@ function render(){
   const pr=el('div');
   const rows=M.map((m,i)=>{const j=F+i;const lb=C.laba[j];return [m+(j===9?' *':''),num(C.bersihTot[j]),num(C.bahan[j]),num(D.ops[j]),num(D.amal[j]),num(C.iklanTot[j]),num(C.biaya[j]),num(lb),pct(lb,C.bersihTot[j])]});
   const tr=['Total',num(bs),num(sum(rng(C.bahan))),num(sum(rng(D.ops))),num(sum(rng(D.amal))),num(I),num(B),num(L),pct(L,bs)];
-  pr.appendChild(el('h3',null,'Laba kas operasional per bulan'));pr.appendChild(el('div','d','Pendapatan bersih (marketplace + offline) dikurangi biaya riil. Ini laba kas, bukan laba akuntansi: bahan dihitung saat dibeli, bukan saat terjual (HPP menyusul di tahap COGS & PnL).'));
+  pr.appendChild(el('h3',null,'Laba kas operasional per bulan'));pr.appendChild(el('div','d','Pendapatan bersih (marketplace + offline) dikurangi biaya riil. Ini laba kas, bukan laba akuntansi: bahan dihitung saat dibeli, bukan saat terjual (lihat tab PnL (HPP) untuk laba dengan HPP).'));
   const w=el('div','tw');w.appendChild(table(['Bulan','Pendapatan bersih','Bahan','Operasional','Amal','Iklan','Total biaya','Laba kas','Margin'],rows,tr));pr.appendChild(w);
   if(hasOkt){const n=el('div','note');n.innerHTML='<b>* Oktober belum lengkap.</b> Dana pesanan akhir Oktober baru cair di November, jadi pendapatan bersih dan laba Oktober terlihat lebih rendah dari kenyataan.';pr.appendChild(n)}
   const n2=el('div','note');n2.innerHTML='<b>Aturan iklan TikTok:</b> iklan TikTok (GMV Max) diambil dari Biaya_Operasional saja. Tab Biaya_Iklan hanya pembanding, jadi tidak dijumlahkan dua kali. Catatan SHU lama tidak mengurangi iklan, sehingga laba di sini lebih rendah dari SHU Kotor.';pr.appendChild(n2);
   $('#c-pnl').replaceChildren(pr);
+
+
+  /* ---- PnL (HPP) ---- */
+  const HP=D.hpp||{ada:0,galat:'',cogs:[],cogs_gratis:[],flag:{n:0,hpp:0,omzet:0,per_bulan:[],contoh:[]},tanpa:{baris:0,omzet:0,sku:[]},etalase:[]};
+  const kh=$('#kpis-h');kh.replaceChildren();
+  if(!HP.ada){
+    const w=el('div','note');w.innerHTML='<b>HPP belum terbaca.</b> '+(HP.galat?'Pesan dari Apps Script: '+HP.galat:'Sambungkan dashboard ke Master 2 (Sumber data). Tab ini memakai HPP dari spreadsheet "HPP Sistem Otomatis" (tab REKAP SKU).');
+    kh.appendChild(w);['#c-hpp1','#c-hpp2','#c-hpp3'].forEach(i=>$(i).replaceChildren());
+  }else{
+  const cg=D.bulan.map((_,i)=>HP.cogs[i]||0);
+  const pn=D.bulan.map((_,i)=>{const bers=C.bersihTot[i],lk=bers-cg[i],ik=C.iklanTot[i],ops=D.ops[i],am=D.amal[i]+D.bahan_pendukung[i];return {bers,cogs:cg[i],lk,ik,ops,am,lb:lk-ik-ops-am}});
+  const rp_=pn.slice(F,T+1),sm=k=>sum(rp_.map(x=>x[k]));
+  const tB=sm('bers'),tC=sm('cogs'),tK=sm('lk'),tL=sm('lb');
+  addK(kh,'Pendapatan bersih',jt(tB),hasOkt?'Okt belum lengkap':'setelah potongan marketplace');
+  addK(kh,'COGS (HPP terjual)',jt(tC),pct(tC,tB)+' dari pendapatan bersih · marketplace');
+  addK(kh,'Laba kotor',jt(tK),'margin '+pct(tK,tB));
+  addK(kh,'Laba bersih',jt(tL),'margin '+pct(tL,tB)+' · setelah iklan, operasional, amal, bahan pendukung');
+  addK(kh,'Perlu dicek',jt(sum(HP.flag.per_bulan.slice(F,T+1))),'HPP dari '+num(HP.flag.n)+' baris Qty besar, belum dihitung sebagai COGS');
+  const sg=[{n:'COGS',c:'var(--b1)',v:rp_.map(x=>x.cogs)},{n:'Operasional',c:'var(--b2)',v:rp_.map(x=>x.ops)},{n:'Amal & bahan pendukung',c:'var(--b3)',v:rp_.map(x=>x.am)},{n:'Iklan',c:'var(--b4)',v:rp_.map(x=>x.ik)},{n:'Laba bersih',c:'var(--gold)',v:rp_.map(x=>Math.max(x.lb,0))}];
+  card('#c-hpp1','Ke mana pendapatan bersih pergi','Tinggi batang = pendapatan bersih. Laba bersih negatif tampil 0 di batang (nilainya ada di tooltip).',sg.map(s=>({n:s.n,c:s.c})),
+    stackedBars(M,sg,{fmt:rp,axisFmt:v=>(v/1e6).toLocaleString('id-ID')+' jt',label:'Pembagian pendapatan bersih per bulan',zero:true,note:rp_.map((x,i)=>(x.lb<0?'laba bersih '+rp(x.lb):'')+((F+i===9)?(x.lb<0?' · ':'')+'belum lengkap':''))}),
+    ()=>table(['Bulan',...sg.map(s=>s.n)],M.map((m,i)=>[m,...sg.map(s=>num(s.v[i]))])));
+  const et=HP.etalase.filter(e=>e.omzet>0).sort((x,y)=>(y.omzet-y.cogs)/y.omzet-(x.omzet-x.cogs)/x.omzet);
+  card('#c-hpp2','Margin kotor per etalase','Jan–Okt (tidak mengikuti filter). Margin = (omzet kotor − HPP) ÷ omzet kotor, sebelum potongan marketplace.',null,
+    hbars(et.map(e=>({n:e.nama,v:(e.omzet-e.cogs)/e.omzet*100,rows:[{n:'Omzet kotor',v:rp(e.omzet)},{n:'HPP',v:rp(e.cogs)},{n:'Margin',v:pct(e.omzet-e.cogs,e.omzet)}]})),{fmt:v=>v.toLocaleString('id-ID',{maximumFractionDigits:1})+'%'}),
+    ()=>table(['Etalase','Qty','Omzet kotor','HPP','Margin'],et.map(e=>[e.nama,num(e.qty),num(e.omzet),num(e.cogs),pct(e.omzet-e.cogs,e.omzet)])));
+  const ph=el('div');
+  ph.appendChild(el('h3',null,'Laba rugi per bulan'));ph.appendChild(el('div','d','Pendapatan bersih dikurangi COGS (HPP produk terjual), lalu biaya iklan, operasional, amal dan bahan pendukung. Pembelian bahan pokok tidak dijumlahkan lagi karena sudah diwakili COGS.'));
+  const wr=el('div','tw');
+  wr.appendChild(table(['Bulan','Pendapatan bersih','COGS','Laba kotor','Margin kotor','Iklan','Operasional','Amal + bahan pendukung','Laba bersih','Margin'],
+    rp_.map((x,i)=>[M[i]+((F+i===9)?' *':''),num(x.bers),num(x.cogs),num(x.lk),pct(x.lk,x.bers),num(x.ik),num(x.ops),num(x.am),num(x.lb),pct(x.lb,x.bers)]),
+    ['Total',num(tB),num(tC),num(tK),pct(tK,tB),num(sm('ik')),num(sm('ops')),num(sm('am')),num(tL),pct(tL,tB)]));
+  ph.appendChild(wr);
+  const bp=sum(D.bahan_pokok.slice(F,T+1));
+  const nt=(h)=>{const n=el('div','note');n.innerHTML=h;ph.appendChild(n)};
+  if(hasOkt)nt('<b>* Oktober belum lengkap.</b> Dana pesanan akhir Oktober cair di November, jadi pendapatan bersih dan laba Oktober terlihat lebih rendah dari kenyataan.');
+  nt('<b>Cara hitung COGS:</b> HPP per SKU hari ini (spreadsheet HPP Sistem Otomatis, tab REKAP SKU) × qty terjual, order tidak batal, per bulan order. Harga bahan yang dipakai adalah yang terbaru, bukan harga saat barang dijual. Hanya marketplace: penjualan offline belum punya rincian SKU, jadi HPP-nya belum masuk (omzet offline ±1% dari total). Hadiah gratis (harga Rp0) ikut dihitung sebagai HPP: '+rp(sum(HP.cogs_gratis.slice(F,T+1)))+'.');
+  nt('<b>Pembanding:</b> pembelian bahan pokok periode ini '+rp(bp)+' vs COGS '+rp(tC)+' (selisih '+rp(bp-tC)+', wajar bila stok bertambah). Selisih kecil menandakan HPP per SKU masuk akal.');
+  if(HP.flag.n){nt('<b>Perlu dicek ('+num(HP.flag.n)+' baris, HPP '+rp(HP.flag.hpp)+', Jan–Okt):</b> baris order dengan Qty ≥ 100 tetapi harga satuan di bawah 15% HPP, kemungkinan Qty bukan pcs. Tidak dihitung sebagai COGS. Contoh: '+HP.flag.contoh.slice(0,4).map(x=>x.order+' · '+x.sku+' · qty '+num(x.qty)+' · Rp'+num(x.harga)+'/unit').join('; ')+'.')}
+  if(HP.tanpa.baris){nt('<b>SKU tanpa HPP ('+num(HP.tanpa.baris)+' baris, omzet '+rp(HP.tanpa.omzet)+'):</b> '+HP.tanpa.sku.map(x=>x.sku+' ('+rp(x.omzet)+')').join(', ')+'. Tidak dihitung sebagai COGS.')}
+  $('#c-hpp3').replaceChildren(ph);
+  }
 
   /* ---- Produk ---- */
   const tp=D.top_produk;
@@ -411,7 +462,7 @@ function render(){
     ['Total',num(sum(alok)),num(sum(C.bahan)),num(sum(alok)-sum(C.bahan)),num(sum(C.iklanTot)),num(sum(D.gmv_max)),num(sum(D.iklan['Iklan TikTok']))]));
   u2.appendChild(uw);
   const n4=el('div','note');n4.innerHTML='<b>Cara baca:</b> iklan TikTok di Biaya_Operasional sama dengan GMV Max di Biaya_Iklan pada Mei, Agu, Sep, dan Okt. Pada bulan lain ada tambahan kecil yang cocok dengan selisih Laporan TikTok.';u2.appendChild(n4);
-  $('#foot').textContent='Sumber: Master 2 v3 (Orders, Order_Lines, Biaya_Operasional, Pembeli_Marketplace, Biaya_Iklan) dan Master 1 (M_SKU). '+(DATA.snapshot_note||'');
+  $('#foot').textContent='Sumber: Master 2 v3 (Orders, Order_Lines, Biaya_Operasional, Pembeli_Marketplace, Biaya_Iklan) dan Master 1 (M_SKU) dan HPP Sistem Otomatis (REKAP SKU). '+(DATA.snapshot_note||'');
 }
 
 /* ---------- kontrol ---------- */
