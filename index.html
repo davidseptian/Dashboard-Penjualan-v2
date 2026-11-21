@@ -93,9 +93,10 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;border-top:1px solid va
 <header>
   <div>
     <div class="brand">Hypotech · Dashboard Penjualan v2</div>
-    <div class="sub">Membaca Master 2 v3 (Penjualan &amp; Keuangan) · <span id="rentangTxt">Jan–Okt</span> 2026</div>
+    <div class="sub">Membaca Master 2 v3 (Penjualan &amp; Keuangan) · <span id="rentangTxt">Jan–Okt</span> <span id="thTxt">2026</span></div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <select id="selTahun" title="Tahun data" style="display:none"></select>
     <span class="badge" id="badge"><i></i><span id="badgeTxt">Belum terhubung</span></span>
     <button class="btn" id="cfgBtn">Sumber data</button>
   </div>
@@ -478,18 +479,22 @@ bangunPreset();
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));hideTip()});
 $('#cfgBtn').onclick=()=>$('#cfg').classList.toggle('on');
 try{const u=localStorage.getItem('hypotech_v2_api'),k=localStorage.getItem('hypotech_v2_key');if(u)$('#apiUrl').value=u;if(k)$('#apiKey').value=k}catch(e){}
+
+let TSEL='';try{TSEL=localStorage.getItem('hypotech_v2_tahun')||''}catch(e){}
+function isiTahun(d){const sel=document.getElementById('selTahun');if(!sel||!d||!d.tahun_tersedia)return;sel.innerHTML=d.tahun_tersedia.slice().reverse().map(y=>'<option value="'+y+'">'+y+'</option>').join('');sel.value=String(d.tahun);sel.style.display=d.tahun_tersedia.length>1?'':'none';const t=document.getElementById('thTxt');if(t)t.textContent=d.tahun;
+  if(!sel._b){sel._b=1;sel.onchange=()=>{TSEL=sel.value;try{localStorage.setItem('hypotech_v2_tahun',TSEL)}catch(e){}muat()}}}
 function jsonp(url,key){return new Promise((res,rej)=>{const cb='hv2_'+Date.now();const s=document.createElement('script');const t=setTimeout(()=>{cleanup();rej(new Error('Waktu habis'))},30000);
   function cleanup(){clearTimeout(t);delete window[cb];s.remove()}
   window[cb]=d=>{cleanup();res(d)};s.onerror=()=>{cleanup();rej(new Error('Gagal memuat'))};
-  s.src=url+(url.includes('?')?'&':'?')+'action=penjualan_v2&fresh=1&key='+encodeURIComponent(key)+'&callback='+cb;document.head.appendChild(s)})}
+  s.src=url+(url.includes('?')?'&':'?')+'action=penjualan_v2&fresh=1&key='+encodeURIComponent(key)+(TSEL?'&tahun='+encodeURIComponent(TSEL):'')+'&callback='+cb;document.head.appendChild(s)})}
 async function muat(){const u=$('#apiUrl').value.trim(),k=$('#apiKey').value;if(!u||!k){$('#cfg').classList.add('on');return}
   $('#badgeTxt').textContent='Memuat…';document.body.classList.add('dim');
   try{const d=await jsonp(u,k);if(d.error)throw new Error(d.error);const nb0=DATA.bulan.length;DATA=Object.assign({},SNAPSHOT,d);if(DATA.bulan.length!==nb0){T=DATA.bulan.length-1;F=Math.min(F,T);fillSel();bangunPreset()}try{localStorage.setItem('hypotech_v2_api',u);localStorage.setItem('hypotech_v2_key',k)}catch(e){}
-    $('#badge').classList.add('live');$('#badgeTxt').textContent='Live dari Master 2 · '+(d.diperbarui||'');
+    $('#badge').classList.add('live');$('#badgeTxt').textContent='Live dari Master 2 · '+(d.diperbarui||'');isiTahun(d);
     const g=d.diagnosa,w=$('#warn');w.style.display='none';
     if(g){const m=[];if(g.orders_dilewati>0)m.push(g.orders_dilewati+' baris Orders dilewati karena tanggal tidak terbaca');
       if(g.biaya_dilewati>0)m.push(g.biaya_dilewati+' baris Biaya_Operasional dilewati karena tanggal tidak terbaca');
-      if(g.offline_terbaca===0)m.push('tidak ada order OFFLINE yang terbaca dari Orders');
+      if(g.offline_terbaca===0&&(!d.tahun_tersedia||d.tahun===d.tahun_tersedia[d.tahun_tersedia.length-1]))m.push('tidak ada order OFFLINE yang terbaca dari Orders');
       if(m.length){w.innerHTML='<b>Periksa data:</b> '+m.join('; ')+'. Cek kolom Tanggal di tab terkait (harus tanggal asli, bukan teks).'+(g.contoh&&g.contoh.length?'<br>Contoh: '+g.contoh.map(x=>x.tab+' baris '+x.baris+' = "'+x.nilai+'" ('+x.tipe+')').join('; '):'');w.style.display='block'}}}catch(e){$('#badgeTxt').textContent='Gagal: '+e.message+' '}
   document.body.classList.remove('dim');render()}
 $('#loadBtn').onclick=muat;
