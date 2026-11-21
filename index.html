@@ -93,7 +93,7 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;border-top:1px solid va
 <header>
   <div>
     <div class="brand">Hypotech · Dashboard Penjualan v2</div>
-    <div class="sub">Membaca Master 2 v3 (Penjualan &amp; Keuangan) · Jan–Okt 2026</div>
+    <div class="sub">Membaca Master 2 v3 (Penjualan &amp; Keuangan) · <span id="rentangTxt">Jan–Okt</span> 2026</div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span class="badge" id="badge"><i></i><span id="badgeTxt">Belum terhubung</span></span>
@@ -190,6 +190,7 @@ const sum = a=>a.reduce((x,y)=>x+(y||0),0);
 let F=0,T=9;
 const rng = a=>a.slice(F,T+1);
 const mon = ()=>DATA.bulan.slice(F,T+1);
+const lastIdx=()=>DATA.bulan.length-1, lastNm=()=>DATA.bulan[DATA.bulan.length-1];
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
 const chList = ()=>DATA.channels.filter(c=>sum(DATA.omzet[c])>0);
 
@@ -289,7 +290,7 @@ const chipSt=(txt,cls)=>{const s=el('span','st '+cls,txt);return s};
 
 /* ---------- perhitungan ---------- */
 function calc(){
-  const D=DATA,idx=[...Array(10).keys()];
+  const D=DATA,idx=[...Array(DATA.bulan.length).keys()];
   const chs=chList();
   const bersihTot=idx.map(i=>sum(D.channels.map(c=>D.bersih[c][i])));
   const omzetTot=idx.map(i=>sum(D.channels.map(c=>D.omzet[c][i])));
@@ -304,13 +305,13 @@ function calc(){
 
 function render(){
   const D=DATA,C=calc(),M=mon();
-  const hasOkt=T>=9;
+  const hasOkt=T>=lastIdx();const rt=document.getElementById('rentangTxt');if(rt)rt.textContent='Jan–'+lastNm();
   /* KPI ringkas */
   const k=$('#kpis');k.replaceChildren();
   const addK=(box,l,v,n)=>{const d=el('div','kpi');d.appendChild(el('div','l',l));d.appendChild(el('div','v',v));d.appendChild(el('div','n',n));box.appendChild(d)};
   const bs=sum(rng(C.bersihTot)),om=sum(rng(C.omzetTot)),od=sum(rng(C.orderTot)),bt=sum(rng(C.batalTot));
   addK(k,'Omzet kotor',jt(om),'harga setelah diskon penjual, tanpa ongkir');
-  addK(k,'Pendapatan bersih',jt(bs),(hasOkt?'Okt belum lengkap · ':'')+pct(bs,om)+' dari omzet kotor');
+  addK(k,'Pendapatan bersih',jt(bs),(hasOkt?lastNm()+' belum lengkap · ':'')+pct(bs,om)+' dari omzet kotor');
   addK(k,'Order (tanpa batal)',num(od),'rata-rata '+num(od/(T-F+1))+' per bulan');
   addK(k,'Order dibatalkan',pct(bt,od+bt),num(bt)+' dari '+num(od+bt)+' order');
   addK(k,'Rata-rata nilai order',rp(om/Math.max(od,1)),'omzet kotor ÷ order');
@@ -327,7 +328,7 @@ function render(){
     ()=>table(['Bulan',...so.map(s=>s.n),'Total'],M.map((m,i)=>[m,...so.map(s=>num(s.v[i])),num(sum(so.map(s=>s.v[i])))])));
   const sb=chs.map(c=>({n:CHN[c],c:CHC[c],v:rng(D.bersih[c])}));
   card('#c-bersih','Pendapatan bersih per bulan','Dana yang diterima setelah potongan marketplace, sebelum biaya iklan. Per bulan order.',sb.map(s=>({n:s.n,c:s.c})),
-    stackedBars(M,sb,{fmt:rp,axisFmt:v=>(v/1e6).toLocaleString('id-ID')+' jt',label:'Pendapatan bersih per bulan',note:M.map((m,i)=>(F+i===9)?'belum lengkap':'')}),
+    stackedBars(M,sb,{fmt:rp,axisFmt:v=>(v/1e6).toLocaleString('id-ID')+' jt',label:'Pendapatan bersih per bulan',note:M.map((m,i)=>(F+i===lastIdx())?'belum lengkap':'')}),
     ()=>table(['Bulan',...sb.map(s=>s.n),'Total'],M.map((m,i)=>[m,...sb.map(s=>num(s.v[i])),num(sum(sb.map(s=>s.v[i])))])));
   const shr=chs.map(c=>({c,t:sum(rng(D.omzet[c]))}));const tt=sum(shr.map(x=>x.t));
   card('#c-share','Porsi omzet per channel','Total periode terpilih.',null,
@@ -337,7 +338,7 @@ function render(){
   /* ---- Biaya & laba ---- */
   const kb=$('#kpis-b');kb.replaceChildren();
   const B=sum(rng(C.biaya)),L=sum(rng(C.laba)),I=sum(rng(C.iklanTot));
-  addK(kb,'Pendapatan bersih',jt(bs),hasOkt?'Okt belum lengkap':'Jan–Sep lengkap');
+  addK(kb,'Pendapatan bersih',jt(bs),hasOkt?lastNm()+' belum lengkap':'Jan–'+DATA.bulan[Math.max(lastIdx()-1,0)]+' lengkap');
   addK(kb,'Biaya riil (kas keluar)',jt(B),'bahan + operasional + amal + iklan');
   addK(kb,'Laba kas operasional',jt(L),'margin '+pct(L,bs)+' dari pendapatan bersih');
   addK(kb,'Biaya iklan',jt(I),pct(I,bs)+' dari pendapatan bersih');
@@ -351,11 +352,11 @@ function render(){
     hbars(tagRows.map(x=>({n:x.n,v:x.v,rows:[{n:'Total',v:rp(x.v)},{n:'Porsi',v:pct(x.v,I)}]})),{fmt:v=>v?jt(v):'0'}),
     ()=>table(['Tag',...M,'Total'],D.iklan_tags.map(t=>[t,...rng(D.iklan[t]).map(num),num(sum(rng(D.iklan[t])))])));
   const pr=el('div');
-  const rows=M.map((m,i)=>{const j=F+i;const lb=C.laba[j];return [m+(j===9?' *':''),num(C.bersihTot[j]),num(C.bahan[j]),num(D.ops[j]),num(D.amal[j]),num(C.iklanTot[j]),num(C.biaya[j]),num(lb),pct(lb,C.bersihTot[j])]});
+  const rows=M.map((m,i)=>{const j=F+i;const lb=C.laba[j];return [m+(j===lastIdx()?' *':''),num(C.bersihTot[j]),num(C.bahan[j]),num(D.ops[j]),num(D.amal[j]),num(C.iklanTot[j]),num(C.biaya[j]),num(lb),pct(lb,C.bersihTot[j])]});
   const tr=['Total',num(bs),num(sum(rng(C.bahan))),num(sum(rng(D.ops))),num(sum(rng(D.amal))),num(I),num(B),num(L),pct(L,bs)];
   pr.appendChild(el('h3',null,'Laba kas operasional per bulan'));pr.appendChild(el('div','d','Pendapatan bersih (marketplace + offline) dikurangi biaya riil. Ini laba kas, bukan laba akuntansi: bahan dihitung saat dibeli, bukan saat terjual (lihat tab PnL (HPP) untuk laba dengan HPP).'));
   const w=el('div','tw');w.appendChild(table(['Bulan','Pendapatan bersih','Bahan','Operasional','Amal','Iklan','Total biaya','Laba kas','Margin'],rows,tr));pr.appendChild(w);
-  if(hasOkt){const n=el('div','note');n.innerHTML='<b>* Oktober belum lengkap.</b> Dana pesanan akhir Oktober baru cair di November, jadi pendapatan bersih dan laba Oktober terlihat lebih rendah dari kenyataan.';pr.appendChild(n)}
+  if(hasOkt){const n=el('div','note');n.innerHTML='<b>* '+lastNm()+' belum lengkap.</b> Dana pesanan akhir bulan baru cair di bulan berikutnya dan biaya bulan ini belum semuanya diinput, jadi pendapatan bersih dan laba '+lastNm()+' belum mewakili bulan penuh.';pr.appendChild(n)}
   const n2=el('div','note');n2.innerHTML='<b>Aturan iklan TikTok:</b> iklan TikTok (GMV Max) diambil dari Biaya_Operasional saja. Tab Biaya_Iklan hanya pembanding, jadi tidak dijumlahkan dua kali. Catatan SHU lama tidak mengurangi iklan, sehingga laba di sini lebih rendah dari SHU Kotor.';pr.appendChild(n2);
   $('#c-pnl').replaceChildren(pr);
 
@@ -371,49 +372,49 @@ function render(){
   const pn=D.bulan.map((_,i)=>{const bers=C.bersihTot[i],lk=bers-cg[i],ik=C.iklanTot[i],ops=D.ops[i],am=D.amal[i]+D.bahan_pendukung[i];return {bers,cogs:cg[i],lk,ik,ops,am,lb:lk-ik-ops-am}});
   const rp_=pn.slice(F,T+1),sm=k=>sum(rp_.map(x=>x[k]));
   const tB=sm('bers'),tC=sm('cogs'),tK=sm('lk'),tL=sm('lb');
-  addK(kh,'Pendapatan bersih',jt(tB),hasOkt?'Okt belum lengkap':'setelah potongan marketplace');
+  addK(kh,'Pendapatan bersih',jt(tB),hasOkt?lastNm()+' belum lengkap':'setelah potongan marketplace');
   addK(kh,'COGS (HPP terjual)',jt(tC),pct(tC,tB)+' dari pendapatan bersih · marketplace');
   addK(kh,'Laba kotor',jt(tK),'margin '+pct(tK,tB));
   addK(kh,'Laba bersih',jt(tL),'margin '+pct(tL,tB)+' · setelah iklan, operasional, amal, bahan pendukung');
   addK(kh,'Perlu dicek',jt(sum(HP.flag.per_bulan.slice(F,T+1))),'HPP dari '+num(HP.flag.n)+' baris Qty besar, belum dihitung sebagai COGS');
   const sg=[{n:'COGS',c:'var(--b1)',v:rp_.map(x=>x.cogs)},{n:'Operasional',c:'var(--b2)',v:rp_.map(x=>x.ops)},{n:'Amal & bahan pendukung',c:'var(--b3)',v:rp_.map(x=>x.am)},{n:'Iklan',c:'var(--b4)',v:rp_.map(x=>x.ik)},{n:'Laba bersih',c:'var(--gold)',v:rp_.map(x=>Math.max(x.lb,0))}];
   card('#c-hpp1','Ke mana pendapatan bersih pergi','Tinggi batang = pendapatan bersih. Laba bersih negatif tampil 0 di batang (nilainya ada di tooltip).',sg.map(s=>({n:s.n,c:s.c})),
-    stackedBars(M,sg,{fmt:rp,axisFmt:v=>(v/1e6).toLocaleString('id-ID')+' jt',label:'Pembagian pendapatan bersih per bulan',zero:true,note:rp_.map((x,i)=>(x.lb<0?'laba bersih '+rp(x.lb):'')+((F+i===9)?(x.lb<0?' · ':'')+'belum lengkap':''))}),
+    stackedBars(M,sg,{fmt:rp,axisFmt:v=>(v/1e6).toLocaleString('id-ID')+' jt',label:'Pembagian pendapatan bersih per bulan',zero:true,note:rp_.map((x,i)=>(x.lb<0?'laba bersih '+rp(x.lb):'')+((F+i===lastIdx())?(x.lb<0?' · ':'')+'belum lengkap':''))}),
     ()=>table(['Bulan',...sg.map(s=>s.n)],M.map((m,i)=>[m,...sg.map(s=>num(s.v[i]))])));
   const et=HP.etalase.filter(e=>e.omzet>0).sort((x,y)=>(y.omzet-y.cogs)/y.omzet-(x.omzet-x.cogs)/x.omzet);
-  card('#c-hpp2','Margin kotor per etalase','Jan–Okt (tidak mengikuti filter). Margin = (omzet kotor − HPP) ÷ omzet kotor, sebelum potongan marketplace.',null,
+  card('#c-hpp2','Margin kotor per etalase','Jan–'+lastNm()+' (tidak mengikuti filter). Margin = (omzet kotor − HPP) ÷ omzet kotor, sebelum potongan marketplace.',null,
     hbars(et.map(e=>({n:e.nama,v:(e.omzet-e.cogs)/e.omzet*100,rows:[{n:'Omzet kotor',v:rp(e.omzet)},{n:'HPP',v:rp(e.cogs)},{n:'Margin',v:pct(e.omzet-e.cogs,e.omzet)}]})),{fmt:v=>v.toLocaleString('id-ID',{maximumFractionDigits:1})+'%'}),
     ()=>table(['Etalase','Qty','Omzet kotor','HPP','Margin'],et.map(e=>[e.nama,num(e.qty),num(e.omzet),num(e.cogs),pct(e.omzet-e.cogs,e.omzet)])));
   const ph=el('div');
   ph.appendChild(el('h3',null,'Laba rugi per bulan'));ph.appendChild(el('div','d','Pendapatan bersih dikurangi COGS (HPP produk terjual), lalu biaya iklan, operasional, amal dan bahan pendukung. Pembelian bahan pokok tidak dijumlahkan lagi karena sudah diwakili COGS.'));
   const wr=el('div','tw');
   wr.appendChild(table(['Bulan','Pendapatan bersih','COGS','Laba kotor','Margin kotor','Iklan','Operasional','Amal + bahan pendukung','Laba bersih','Margin'],
-    rp_.map((x,i)=>[M[i]+((F+i===9)?' *':''),num(x.bers),num(x.cogs),num(x.lk),pct(x.lk,x.bers),num(x.ik),num(x.ops),num(x.am),num(x.lb),pct(x.lb,x.bers)]),
+    rp_.map((x,i)=>[M[i]+((F+i===lastIdx())?' *':''),num(x.bers),num(x.cogs),num(x.lk),pct(x.lk,x.bers),num(x.ik),num(x.ops),num(x.am),num(x.lb),pct(x.lb,x.bers)]),
     ['Total',num(tB),num(tC),num(tK),pct(tK,tB),num(sm('ik')),num(sm('ops')),num(sm('am')),num(tL),pct(tL,tB)]));
   ph.appendChild(wr);
   const bp=sum(D.bahan_pokok.slice(F,T+1));
   const nt=(h)=>{const n=el('div','note');n.innerHTML=h;ph.appendChild(n)};
-  if(hasOkt)nt('<b>* Oktober belum lengkap.</b> Dana pesanan akhir Oktober cair di November, jadi pendapatan bersih dan laba Oktober terlihat lebih rendah dari kenyataan.');
+  if(hasOkt)nt('<b>* '+lastNm()+' belum lengkap.</b> Dana pesanan akhir bulan cair di bulan berikutnya dan biaya bulan ini belum semuanya diinput, jadi pendapatan bersih dan laba '+lastNm()+' belum mewakili bulan penuh.');
   nt('<b>Cara hitung COGS:</b> HPP per SKU hari ini (spreadsheet HPP Sistem Otomatis, tab REKAP SKU) × qty terjual, order tidak batal, per bulan order. Harga bahan yang dipakai adalah yang terbaru, bukan harga saat barang dijual. Hanya marketplace: penjualan offline belum punya rincian SKU, jadi HPP-nya belum masuk (omzet offline ±1% dari total). Hadiah gratis (harga Rp0) ikut dihitung sebagai HPP: '+rp(sum(HP.cogs_gratis.slice(F,T+1)))+'.');
   nt('<b>Pembanding:</b> pembelian bahan pokok periode ini '+rp(bp)+' vs COGS '+rp(tC)+' (selisih '+rp(bp-tC)+', wajar bila stok bertambah). Selisih kecil menandakan HPP per SKU masuk akal.');
-  if(HP.flag.n){nt('<b>Perlu dicek ('+num(HP.flag.n)+' baris, HPP '+rp(HP.flag.hpp)+', Jan–Okt):</b> baris order dengan Qty ≥ 100 tetapi harga satuan di bawah 15% HPP, kemungkinan Qty bukan pcs. Tidak dihitung sebagai COGS. Contoh: '+HP.flag.contoh.slice(0,4).map(x=>x.order+' · '+x.sku+' · qty '+num(x.qty)+' · Rp'+num(x.harga)+'/unit').join('; ')+'.')}
+  if(HP.flag.n){nt('<b>Perlu dicek ('+num(HP.flag.n)+' baris, HPP '+rp(HP.flag.hpp)+', Jan–'+lastNm()+'):</b> baris order dengan Qty ≥ 100 tetapi harga satuan di bawah 15% HPP, kemungkinan Qty bukan pcs. Tidak dihitung sebagai COGS. Contoh: '+HP.flag.contoh.slice(0,4).map(x=>x.order+' · '+x.sku+' · qty '+num(x.qty)+' · Rp'+num(x.harga)+'/unit').join('; ')+'.')}
   if(HP.tanpa.baris){nt('<b>SKU tanpa HPP ('+num(HP.tanpa.baris)+' baris, omzet '+rp(HP.tanpa.omzet)+'):</b> '+HP.tanpa.sku.map(x=>x.sku+' ('+rp(x.omzet)+')').join(', ')+'. Tidak dihitung sebagai COGS.')}
   $('#c-hpp3').replaceChildren(ph);
   }
 
   /* ---- Produk ---- */
   const tp=D.top_produk;
-  card('#c-top','15 produk teratas (omzet kotor)','Jan–Okt, semua channel marketplace (tidak mengikuti filter periode). Nama dari Master 1 (M_SKU).',null,
+  card('#c-top','15 produk teratas (omzet kotor)','Jan–'+lastNm()+', semua channel marketplace (tidak mengikuti filter periode). Nama dari Master 1 (M_SKU).',null,
     hbars(tp.map(p=>({n:p.nama,v:p.omzet,rows:[{n:'SKU',v:p.sku},{n:'Etalase',v:p.etalase},{n:'Terjual',v:num(p.qty)+' pcs'},{n:'Omzet',v:rp(p.omzet)}]})),{fmt:jt}),
     ()=>table(['SKU','Produk','Etalase','Qty','Omzet'],tp.map(p=>[p.sku,p.nama,p.etalase,num(p.qty),num(p.omzet)])));
   const et=D.etalase,te=sum(et.map(e=>e.omzet));
-  card('#c-etalase','Omzet per etalase','Jan–Okt (tidak mengikuti filter periode). Etalase dari Master 1.',null,
+  card('#c-etalase','Omzet per etalase','Jan–'+lastNm()+' (tidak mengikuti filter periode). Etalase dari Master 1.',null,
     hbars(et.map(e=>({n:e.nama,v:e.omzet,rows:[{n:'Omzet',v:rp(e.omzet)},{n:'Terjual',v:num(e.qty)+' pcs'},{n:'Porsi',v:pct(e.omzet,te)}]})),{fmt:v=>jt(v)+' · '+pct(v,te)}),
     ()=>table(['Etalase','Qty','Omzet','Porsi'],et.map(e=>[e.nama,num(e.qty),num(e.omzet),pct(e.omzet,te)])));
 
   /* ---- Pembeli ---- */
   const P=D.pembeli,kp=$('#kpis-p');kp.replaceChildren();
-  addK(kp,'Pembeli Shopee unik',num(P.unik),'username, Jan–Okt (tidak ikut filter)');
+  addK(kp,'Pembeli Shopee unik',num(P.unik),'username, Jan–'+lastNm()+' (tidak ikut filter)');
   addK(kp,'Pembeli berulang',num(P.berulang),pct(P.berulang,P.unik)+' dari pembeli unik');
   addK(kp,'Omzet dari pembeli berulang',jt(P.omzet_berulang),pct(P.omzet_berulang,P.omzet_total)+' dari omzet Shopee');
   addK(kp,'Rata-rata order pembeli berulang',(P.order_berulang/Math.max(P.berulang,1)).toLocaleString('id-ID',{maximumFractionDigits:1}),'order per pembeli');
@@ -441,7 +442,7 @@ function render(){
   const u=$('#c-uji');u.replaceChildren();
   u.appendChild(el('h3',null,'Uji paralel: Master 2 v3 vs Catatan SHU (sistem lama)'));
   u.appendChild(el('div','d','Revenue Catatan SHU dibandingkan pendapatan bersih Master 2 v3 (marketplace + offline), per bulan order. Cocok jika ≥ 98%.'));
-  const ids=[...Array(10).keys()];let sa=0,sb3=0;
+  const ids=[...Array(DATA.bulan.length).keys()];let sa=0,sb3=0;
   const rowsU=ids.map(i=>{const a=D.catatan_shu[i],b=C.bersihTot[i];if(a!=null){sa+=a;sb3+=b}
     const p=a?b/a*100:null;const stt=a==null?chipSt('Catatan belum terisi','n'):p>=98?chipSt('Cocok','ok'):p>=95?chipSt('Perlu dilihat','w'):chipSt('Selisih besar','x');
     return [D.bulan[i],a==null?'–':num(a),num(b),a==null?'–':num(b-a),p==null?'–':p.toFixed(1)+'%',stt]});
@@ -470,8 +471,10 @@ const selF=$('#from'),selT=$('#to');
 function fillSel(){[selF,selT].forEach(s=>{s.replaceChildren();DATA.bulan.forEach((b,i)=>{const o=el('option',null,b);o.value=i;s.appendChild(o)})});selF.value=F;selT.value=T}
 selF.onchange=()=>{F=+selF.value;if(T<F){T=F;selT.value=T}render()};
 selT.onchange=()=>{T=+selT.value;if(F>T){F=T;selF.value=F}render()};
-const pre=[['Jan–Okt',0,9],['Jan–Sep',0,8],['Q1',0,2],['Q2',3,5],['Q3',6,8],['Okt',9,9]];
-pre.forEach(([n,a,b])=>{const c=el('button','chip',n);c.onclick=()=>{F=a;T=b;selF.value=F;selT.value=T;render()};$('#presets').appendChild(c)});
+function bangunPreset(){const bx=$('#presets');bx.replaceChildren();const L=lastIdx(),N=lastNm();
+  const pre=[['Jan–'+N,0,L]];if(L>=1)pre.push(['Jan–'+DATA.bulan[L-1],0,L-1]);pre.push(['Q1',0,2],['Q2',3,5],['Q3',6,8]);if(L>=9)pre.push(['Q4 ('+DATA.bulan[9]+(L>9?'–'+N:'')+')',9,L]);pre.push([N,L,L]);
+  pre.forEach(([n,a,b])=>{const c=el('button','chip',n);c.onclick=()=>{F=a;T=b;selF.value=F;selT.value=T;render()};bx.appendChild(c)})}
+bangunPreset();
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));hideTip()});
 $('#cfgBtn').onclick=()=>$('#cfg').classList.toggle('on');
 try{const u=localStorage.getItem('hypotech_v2_api'),k=localStorage.getItem('hypotech_v2_key');if(u)$('#apiUrl').value=u;if(k)$('#apiKey').value=k}catch(e){}
@@ -481,7 +484,7 @@ function jsonp(url,key){return new Promise((res,rej)=>{const cb='hv2_'+Date.now(
   s.src=url+(url.includes('?')?'&':'?')+'action=penjualan_v2&fresh=1&key='+encodeURIComponent(key)+'&callback='+cb;document.head.appendChild(s)})}
 async function muat(){const u=$('#apiUrl').value.trim(),k=$('#apiKey').value;if(!u||!k){$('#cfg').classList.add('on');return}
   $('#badgeTxt').textContent='Memuat…';document.body.classList.add('dim');
-  try{const d=await jsonp(u,k);if(d.error)throw new Error(d.error);DATA=Object.assign({},SNAPSHOT,d);try{localStorage.setItem('hypotech_v2_api',u);localStorage.setItem('hypotech_v2_key',k)}catch(e){}
+  try{const d=await jsonp(u,k);if(d.error)throw new Error(d.error);const nb0=DATA.bulan.length;DATA=Object.assign({},SNAPSHOT,d);if(DATA.bulan.length!==nb0){T=DATA.bulan.length-1;F=Math.min(F,T);fillSel();bangunPreset()}try{localStorage.setItem('hypotech_v2_api',u);localStorage.setItem('hypotech_v2_key',k)}catch(e){}
     $('#badge').classList.add('live');$('#badgeTxt').textContent='Live dari Master 2 · '+(d.diperbarui||'');
     const g=d.diagnosa,w=$('#warn');w.style.display='none';
     if(g){const m=[];if(g.orders_dilewati>0)m.push(g.orders_dilewati+' baris Orders dilewati karena tanggal tidak terbaca');
