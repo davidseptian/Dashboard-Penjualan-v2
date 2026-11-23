@@ -366,6 +366,8 @@ function render(){
   addK(k,'Omzet kotor',jt(om),'harga setelah diskon penjual, tanpa ongkir');
   addK(k,'Pendapatan bersih',jt(bs),(hasOkt?lastNm()+' belum lengkap · ':'')+pct(bs,om)+' dari omzet kotor');
   addK(k,'Order (tanpa batal)',num(od),'rata-rata '+num(od/(T-F+1))+' per bulan');
+  const it=sum(rng(DATA.item_terjual||[]));
+  addK(k,'Item terjual',DATA.item_terjual?num(it)+' pcs':'–',DATA.item_terjual?('rata-rata '+(od?(it/od).toLocaleString('id-ID',{maximumFractionDigits:1}):'0')+' item per order · tanpa order batal'):'perlu Apps Script versi terbaru');
   addK(k,'Order dibatalkan',pct(bt,od+bt),num(bt)+' dari '+num(od+bt)+' order');
   addK(k,'Rata-rata nilai order',rp(om/Math.max(od,1)),'omzet kotor ÷ order');
   /* omzet stacked */
@@ -498,9 +500,9 @@ function render(){
   sbBar.appendChild(sbL1);sbBar.appendChild(sbL2);sbBar.appendChild(sbBtn);sbBar.appendChild(sbMsg);st.appendChild(sbBar);
   const sbSv=k=>(D.status&&D.status[k])||[],sbG0=(k,j)=>sbSv(k)[j]||0,SB_ALL=['Selesai','Diproses','Retur','Dibatalkan','Batal_Otomatis'];
   const sw=el('div','tw');
-  sw.appendChild(table(['Bulan','Selesai','Diproses','Retur','Dibatalkan','Batal otomatis','% batal','Belum cair (order)','Belum cair (omzet)'],
-    M.map((m,i)=>{const j=F+i;const v=SB_ALL.map(k=>sbG0(k,j)),tot=sum(v);return [m,num(v[0]),num(v[1]),num(v[2]),num(v[3]),num(v[4]),pct(v[3]+v[4],tot),num(D.belum_cair_n[j]),num(D.belum_cair_omzet[j])]}),
-    (()=>{const v=SB_ALL.map(k=>sum(rng(sbSv(k))));return ['Total',...v.map(num),pct(v[3]+v[4],sum(v)),num(sum(rng(D.belum_cair_n))),num(sum(rng(D.belum_cair_omzet)))]})()));
+  sw.appendChild(table(['Bulan','Selesai','Diproses','Retur','Dibatalkan','Batal otomatis','% batal','Item terjual (pcs)','Belum cair (order)','Belum cair (omzet)'],
+    M.map((m,i)=>{const j=F+i;const v=SB_ALL.map(k=>sbG0(k,j)),tot=sum(v);return [m,num(v[0]),num(v[1]),num(v[2]),num(v[3]),num(v[4]),pct(v[3]+v[4],tot),num((D.item_terjual||[])[j]||0),num(D.belum_cair_n[j]),num(D.belum_cair_omzet[j])]}),
+    (()=>{const v=SB_ALL.map(k=>sum(rng(sbSv(k))));return ['Total',...v.map(num),pct(v[3]+v[4],sum(v)),num(sum(rng(D.item_terjual||[]))),num(sum(rng(D.belum_cair_n))),num(sum(rng(D.belum_cair_omzet)))]})()));
   st.appendChild(sw);
   if(D.tertahan&&D.tertahan.n>0)st.appendChild(el('div','d','Dana tertahan: '+num(D.tertahan.n)+' pesanan Selesai belum cair lebih dari '+sbBp+' hari (omzet '+num(D.tertahan.omzet)+'). Tagih ke marketplace; jika belum cair setelah '+sbBc+' hari dianggap batal.'));
   const sbRi=D.retur_info;if(sbRi)st.appendChild(el('div','d',sbRi.tab_ada?('Retur: '+num(sbRi.jadi_status_retur)+' pesanan Diproses ditandai Retur dari '+num(sbRi.pesanan_retur)+' pesanan di REPORT RETUR MP'+(Object.keys(sbRi.status_lain_tidak_diubah||{}).length?'; pesanan retur berstatus lain tidak diubah ('+Object.keys(sbRi.status_lain_tidak_diubah).map(k=>k+' '+sbRi.status_lain_tidak_diubah[k]).join(', ')+')':'')+'.'):'Tab Retur belum ada di Master 2, jadi status Retur belum dipakai.'));
