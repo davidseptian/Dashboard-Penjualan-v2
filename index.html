@@ -220,6 +220,7 @@ const rng = a=>a.slice(F,T+1);
 const mon = ()=>DATA.bulan.slice(F,T+1);
 const lastIdx=()=>DATA.bulan.length-1, lastNm=()=>DATA.bulan[DATA.bulan.length-1];
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
+const escH=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const chList = ()=>DATA.channels.filter(c=>sum(DATA.omzet[c])>0);
 
 /* ---------- tooltip ---------- */
@@ -407,7 +408,7 @@ function render(){
   const HP=D.hpp||{ada:0,galat:'',cogs:[],cogs_gratis:[],flag:{n:0,hpp:0,omzet:0,per_bulan:[],contoh:[]},tanpa:{baris:0,omzet:0,sku:[]},etalase:[]};
   const kh=$('#kpis-h');kh.replaceChildren();
   if(!HP.ada){
-    const w=el('div','note');w.innerHTML='<b>HPP belum terbaca.</b> '+(HP.galat?'Pesan dari Apps Script: '+HP.galat:'Sambungkan dashboard ke Master 2 (Sumber data). Tab ini memakai HPP dari spreadsheet "HPP Sistem Otomatis" (tab REKAP SKU).');
+    const w=el('div','note');w.innerHTML='<b>HPP belum terbaca.</b> '+(HP.galat?'Pesan dari Apps Script: '+escH(HP.galat):'Sambungkan dashboard ke Master 2 (Sumber data). Tab ini memakai HPP dari spreadsheet "HPP Sistem Otomatis" (tab REKAP SKU).');
     kh.appendChild(w);['#c-hpp1','#c-hpp2','#c-hpp3'].forEach(i=>$(i).replaceChildren());
   }else{
   const cg=D.bulan.map((_,i)=>HP.cogs[i]||0);
@@ -578,7 +579,7 @@ async function muat(){const u=$('#apiUrl').value.trim(),k=$('#apiKey').value;if(
     if(g){const m=[];if(g.orders_dilewati>0)m.push(g.orders_dilewati+' baris Orders dilewati karena tanggal tidak terbaca');
       if(g.biaya_dilewati>0)m.push(g.biaya_dilewati+' baris Biaya_Operasional dilewati karena tanggal tidak terbaca');
       if(g.offline_terbaca===0&&(!d.rentang||d.rentang.mode==='tahun')&&(!d.tahun_tersedia||d.tahun===d.tahun_tersedia[d.tahun_tersedia.length-1]))m.push('tidak ada order OFFLINE yang terbaca dari Orders');
-      if(m.length){w.innerHTML='<b>Periksa data:</b> '+m.join('; ')+'. Cek kolom Tanggal di tab terkait (harus tanggal asli, bukan teks).'+(g.contoh&&g.contoh.length?'<br>Contoh: '+g.contoh.map(x=>x.tab+' baris '+x.baris+' = "'+x.nilai+'" ('+x.tipe+')').join('; '):'');w.style.display='block'}}}catch(e){$('#badgeTxt').textContent='Gagal: '+e.message+' '}
+      if(m.length){w.innerHTML='<b>Periksa data:</b> '+m.join('; ')+'. Cek kolom Tanggal di tab terkait (harus tanggal asli, bukan teks).'+(g.contoh&&g.contoh.length?'<br>Contoh: '+g.contoh.map(x=>escH(x.tab)+' baris '+escH(x.baris)+' = "'+escH(x.nilai)+'" ('+escH(x.tipe)+')').join('; '):'');w.style.display='block'}}}catch(e){$('#badgeTxt').textContent='Gagal: '+e.message+' '}
   document.body.classList.remove('dim');render()}
 $('#loadBtn').onclick=muat;
 $('#resetBtn').onclick=()=>{try{localStorage.removeItem('hypotech_v2_key');localStorage.removeItem('hypotech_v2_api')}catch(e){}$('#apiKey').value='';DATA=SNAPSHOT;$('#badge').classList.remove('live');$('#badgeTxt').textContent='Belum terhubung';render()};
