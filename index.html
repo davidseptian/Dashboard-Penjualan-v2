@@ -485,12 +485,25 @@ function render(){
 
   /* ---- Status ---- */
   const st=$('#c-status');st.replaceChildren();st.appendChild(el('h3',null,'Status order per bulan'));
-  st.appendChild(el('div','d','Status memakai 4 nilai baku. Order yang dananya sudah cair otomatis dinaikkan ke Selesai. Kolom belum cair = order aktif yang dananya belum masuk.'));
+  st.appendChild(el('div','d','Retur dan Batal otomatis dihitung saat data dibaca, tab Orders tidak diubah. Retur = pesanan Diproses yang tercatat di REPORT RETUR MP. Batal otomatis = pesanan Diproses yang melewati batas hari, atau pesanan Selesai yang dananya belum cair melewati batas hari (barang dianggap dikembalikan); keduanya tidak masuk omzet. Order yang dananya sudah cair otomatis dinaikkan ke Selesai. Kolom belum cair = order aktif yang dananya belum masuk.'));
+  const sbBp=(D.batas&&D.batas.proses)||45,sbBc=(D.batas&&D.batas.cair)||60;
+  const sbBar=el('div','bar');sbBar.style.cssText='display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:4px 0 12px';
+  const sbMkIn=(id,v)=>{const i=document.createElement('input');i.type='text';i.id=id;i.value=String(v);i.setAttribute('inputmode','numeric');i.maxLength=3;i.style.cssText='width:64px;text-align:center';return i};
+  const sbL1=el('label','sub');sbL1.style.cssText='display:flex;gap:6px;align-items:center';sbL1.appendChild(document.createTextNode('Diproses dianggap batal setelah'));const sbInP=sbMkIn('batasProses',sbBp);sbL1.appendChild(sbInP);sbL1.appendChild(document.createTextNode('hari'));
+  const sbL2=el('label','sub');sbL2.style.cssText='display:flex;gap:6px;align-items:center';sbL2.appendChild(document.createTextNode('Selesai belum cair dianggap batal setelah'));const sbInC=sbMkIn('batasCair',sbBc);sbL2.appendChild(sbInC);sbL2.appendChild(document.createTextNode('hari'));
+  const sbBtn=el('button','btn','Terapkan');sbBtn.id='batasTerap';const sbMsg=el('span','sub','');sbMsg.id='batasMsg';
+  sbBtn.onclick=()=>{const a=Number(sbInP.value.trim()),b=Number(sbInC.value.trim());
+    if(!(Number.isInteger(a)&&a>=1&&a<=365&&Number.isInteger(b)&&b>=1&&b<=365)){sbMsg.textContent='Isi bilangan bulat 1 sampai 365.';sbMsg.style.color='#ff9b9b';return}
+    BATAS.proses=a;BATAS.cair=b;try{localStorage.setItem('hypotech_pj_batas',JSON.stringify(BATAS))}catch(e){}sbMsg.textContent='Memuat ulang…';sbMsg.style.color='';muat()};
+  sbBar.appendChild(sbL1);sbBar.appendChild(sbL2);sbBar.appendChild(sbBtn);sbBar.appendChild(sbMsg);st.appendChild(sbBar);
+  const sbSv=k=>(D.status&&D.status[k])||[],sbG0=(k,j)=>sbSv(k)[j]||0,SB_ALL=['Selesai','Diproses','Retur','Dibatalkan','Batal_Otomatis'];
   const sw=el('div','tw');
-  sw.appendChild(table(['Bulan','Selesai','Diproses','Dibatalkan','% batal','Belum cair (order)','Belum cair (omzet)'],
-    M.map((m,i)=>{const j=F+i;const a=D.status.Selesai[j],b=D.status.Diproses[j],c=D.status.Dibatalkan[j];return [m,num(a),num(b),num(c),pct(c,a+b+c),num(D.belum_cair_n[j]),num(D.belum_cair_omzet[j])]}),
-    ['Total',...['Selesai','Diproses','Dibatalkan'].map(s=>num(sum(rng(D.status[s])))),pct(sum(rng(D.status.Dibatalkan)),sum(['Selesai','Diproses','Dibatalkan'].map(s=>sum(rng(D.status[s]))))),num(sum(rng(D.belum_cair_n))),num(sum(rng(D.belum_cair_omzet)))]));
+  sw.appendChild(table(['Bulan','Selesai','Diproses','Retur','Dibatalkan','Batal otomatis','% batal','Belum cair (order)','Belum cair (omzet)'],
+    M.map((m,i)=>{const j=F+i;const v=SB_ALL.map(k=>sbG0(k,j)),tot=sum(v);return [m,num(v[0]),num(v[1]),num(v[2]),num(v[3]),num(v[4]),pct(v[3]+v[4],tot),num(D.belum_cair_n[j]),num(D.belum_cair_omzet[j])]}),
+    (()=>{const v=SB_ALL.map(k=>sum(rng(sbSv(k))));return ['Total',...v.map(num),pct(v[3]+v[4],sum(v)),num(sum(rng(D.belum_cair_n))),num(sum(rng(D.belum_cair_omzet)))]})()));
   st.appendChild(sw);
+  if(D.tertahan&&D.tertahan.n>0)st.appendChild(el('div','d','Dana tertahan: '+num(D.tertahan.n)+' pesanan Selesai belum cair lebih dari '+sbBp+' hari (omzet '+num(D.tertahan.omzet)+'). Tagih ke marketplace; jika belum cair setelah '+sbBc+' hari dianggap batal.'));
+  const sbRi=D.retur_info;if(sbRi)st.appendChild(el('div','d',sbRi.tab_ada?('Retur: '+num(sbRi.jadi_status_retur)+' pesanan Diproses ditandai Retur dari '+num(sbRi.pesanan_retur)+' pesanan di REPORT RETUR MP'+(Object.keys(sbRi.status_lain_tidak_diubah||{}).length?'; pesanan retur berstatus lain tidak diubah ('+Object.keys(sbRi.status_lain_tidak_diubah).map(k=>k+' '+sbRi.status_lain_tidak_diubah[k]).join(', ')+')':'')+'.'):'Tab Retur belum ada di Master 2, jadi status Retur belum dipakai.'));
 
   /* ---- Uji paralel ---- */
   const u=$('#c-uji');u.replaceChildren();
@@ -578,10 +591,11 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.que
 $('#cfgBtn').onclick=()=>$('#cfg').classList.toggle('on');
 try{const u=localStorage.getItem('hypotech_v2_api'),k=lihatK();if(u)$('#apiUrl').value=u;if(k)$('#apiKey').value=k}catch(e){}
 
+let BATAS={proses:0,cair:0};try{const b0=JSON.parse(localStorage.getItem('hypotech_pj_batas')||'null');if(b0&&Number.isInteger(b0.proses)&&b0.proses>=1&&b0.proses<=365&&Number.isInteger(b0.cair)&&b0.cair>=1&&b0.cair<=365){BATAS.proses=b0.proses;BATAS.cair=b0.cair}}catch(e){}
 function jsonp(url,key){return new Promise((res,rej)=>{const cb='hv2_'+Date.now();const s=document.createElement('script');const t=setTimeout(()=>{cleanup();rej(new Error('Waktu habis'))},30000);
   function cleanup(){clearTimeout(t);delete window[cb];s.remove()}
   window[cb]=d=>{cleanup();res(d)};s.onerror=()=>{cleanup();rej(new Error('Gagal memuat'))};
-  s.src=url+(url.includes('?')?'&':'?')+'action=penjualan_v2&fresh=1&key='+encodeURIComponent(key)+(RG?'&dari='+RG.dari+'&sampai='+RG.sampai:'')+'&callback='+cb;document.head.appendChild(s)})}
+  s.src=url+(url.includes('?')?'&':'?')+'action=penjualan_v2&fresh=1&key='+encodeURIComponent(key)+(RG?'&dari='+RG.dari+'&sampai='+RG.sampai:'')+(BATAS.proses?'&batas_proses='+BATAS.proses+'&batas_cair='+BATAS.cair:'')+'&callback='+cb;document.head.appendChild(s)})}
 async function muat(){const u=$('#apiUrl').value.trim(),k=$('#apiKey').value;if(!u||!k){$('#cfg').classList.add('on');return}
   $('#badgeTxt').textContent='Memuat…';document.body.classList.add('dim');
   try{const d=await jsonp(u,k);if(d.error)throw new Error(d.error);DATA=Object.assign({},SNAPSHOT,d);F=0;T=DATA.bulan.length-1;bangunPreset();try{localStorage.setItem('hypotech_v2_api',u);simpanK(k)}catch(e){}
