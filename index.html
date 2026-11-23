@@ -110,6 +110,17 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;border-top:1px solid va
 .calq a{color:#8a6d00;cursor:pointer}.calq a:hover{text-decoration:underline}.calq .sub{color:#b00020;font-weight:500}
 @media(max-width:640px){.calw{grid-template-columns:1fr}.calm+.calm{border-left:0;border-top:1px solid #e3e3e3}}
 </style>
+<script>
+/* Kunci rahasia: default hanya untuk sesi tab ini; tersimpan di perangkat bila "Ingat di perangkat ini" dicentang */
+const KEYN='hypotech_v2_key',INGAT='hypotech_v2_ingat';
+function lihatK(){try{const ingat=localStorage.getItem(INGAT)==='1',ls=localStorage.getItem(KEYN),ss=sessionStorage.getItem(KEYN);
+const cb=document.getElementById('ingat');if(cb)cb.checked=ingat;
+if(!ingat&&ls){sessionStorage.setItem(KEYN,ls);localStorage.removeItem(KEYN);return ls}
+return ss||(ingat?ls:null)||null}catch(e){return null}}
+function simpanK(k){try{const cb=document.getElementById('ingat'),ingat=!!(cb&&cb.checked);localStorage.setItem(INGAT,ingat?'1':'0');
+if(ingat){localStorage.setItem(KEYN,k);sessionStorage.removeItem(KEYN)}else{sessionStorage.setItem(KEYN,k);localStorage.removeItem(KEYN)}}catch(e){}}
+function hapusK(){try{localStorage.removeItem(KEYN);sessionStorage.removeItem(KEYN)}catch(e){}}
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -125,7 +136,7 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;border-top:1px solid va
 </header>
 <div class="cfg" id="cfg">
   <input type="text" id="apiUrl" placeholder="URL Web App Apps Script Master 2 (…/exec)">
-  <input type="password" id="apiKey" placeholder="Kunci rahasia" autocomplete="off" style="max-width:220px">
+  <input type="password" id="apiKey" placeholder="Kunci rahasia" autocomplete="off" style="max-width:220px"><label style="display:inline-flex;gap:6px;align-items:center;font-size:12px;opacity:.85;margin-left:8px;cursor:pointer" title="Kalau dicentang, kunci tersimpan di browser ini. Kalau tidak, kunci hilang saat tab ditutup."><input type="checkbox" id="ingat"> Ingat di perangkat ini</label>
   <button class="btn gold" id="loadBtn">Muat dari Master 2</button>
   <button class="btn" id="resetBtn">Putuskan &amp; hapus kunci</button>
 </div>
@@ -565,7 +576,7 @@ function bangunPreset(){const bx=$('#presets');bx.replaceChildren();const r=DATA
 bangunPreset();
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));hideTip()});
 $('#cfgBtn').onclick=()=>$('#cfg').classList.toggle('on');
-try{const u=localStorage.getItem('hypotech_v2_api'),k=localStorage.getItem('hypotech_v2_key');if(u)$('#apiUrl').value=u;if(k)$('#apiKey').value=k}catch(e){}
+try{const u=localStorage.getItem('hypotech_v2_api'),k=lihatK();if(u)$('#apiUrl').value=u;if(k)$('#apiKey').value=k}catch(e){}
 
 function jsonp(url,key){return new Promise((res,rej)=>{const cb='hv2_'+Date.now();const s=document.createElement('script');const t=setTimeout(()=>{cleanup();rej(new Error('Waktu habis'))},30000);
   function cleanup(){clearTimeout(t);delete window[cb];s.remove()}
@@ -573,7 +584,7 @@ function jsonp(url,key){return new Promise((res,rej)=>{const cb='hv2_'+Date.now(
   s.src=url+(url.includes('?')?'&':'?')+'action=penjualan_v2&fresh=1&key='+encodeURIComponent(key)+(RG?'&dari='+RG.dari+'&sampai='+RG.sampai:'')+'&callback='+cb;document.head.appendChild(s)})}
 async function muat(){const u=$('#apiUrl').value.trim(),k=$('#apiKey').value;if(!u||!k){$('#cfg').classList.add('on');return}
   $('#badgeTxt').textContent='Memuat…';document.body.classList.add('dim');
-  try{const d=await jsonp(u,k);if(d.error)throw new Error(d.error);DATA=Object.assign({},SNAPSHOT,d);F=0;T=DATA.bulan.length-1;bangunPreset();try{localStorage.setItem('hypotech_v2_api',u);localStorage.setItem('hypotech_v2_key',k)}catch(e){}
+  try{const d=await jsonp(u,k);if(d.error)throw new Error(d.error);DATA=Object.assign({},SNAPSHOT,d);F=0;T=DATA.bulan.length-1;bangunPreset();try{localStorage.setItem('hypotech_v2_api',u);simpanK(k)}catch(e){}
     $('#badge').classList.add('live');$('#badgeTxt').textContent='Live dari Master 2 · '+(d.diperbarui||'');
     const g=d.diagnosa,w=$('#warn');w.style.display='none';
     if(g){const m=[];if(g.orders_dilewati>0)m.push(g.orders_dilewati+' baris Orders dilewati karena tanggal tidak terbaca');
@@ -582,7 +593,7 @@ async function muat(){const u=$('#apiUrl').value.trim(),k=$('#apiKey').value;if(
       if(m.length){w.innerHTML='<b>Periksa data:</b> '+m.join('; ')+'. Cek kolom Tanggal di tab terkait (harus tanggal asli, bukan teks).'+(g.contoh&&g.contoh.length?'<br>Contoh: '+g.contoh.map(x=>escH(x.tab)+' baris '+escH(x.baris)+' = "'+escH(x.nilai)+'" ('+escH(x.tipe)+')').join('; '):'');w.style.display='block'}}}catch(e){$('#badgeTxt').textContent='Gagal: '+e.message+' '}
   document.body.classList.remove('dim');render()}
 $('#loadBtn').onclick=muat;
-$('#resetBtn').onclick=()=>{try{localStorage.removeItem('hypotech_v2_key');localStorage.removeItem('hypotech_v2_api')}catch(e){}$('#apiKey').value='';DATA=SNAPSHOT;$('#badge').classList.remove('live');$('#badgeTxt').textContent='Belum terhubung';render()};
+$('#resetBtn').onclick=()=>{try{hapusK();localStorage.removeItem('hypotech_v2_api')}catch(e){}$('#apiKey').value='';DATA=SNAPSHOT;$('#badge').classList.remove('live');$('#badgeTxt').textContent='Belum terhubung';render()};
 fillSel();render();
 if($('#apiUrl').value&&$('#apiKey').value)muat();
 setInterval(()=>{if(!document.hidden&&$('#badge').classList.contains('live'))muat()},300000);
