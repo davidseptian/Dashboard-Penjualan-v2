@@ -493,11 +493,19 @@ function render(){
   const sbMkIn=(id,v)=>{const i=document.createElement('input');i.type='text';i.id=id;i.value=String(v);i.setAttribute('inputmode','numeric');i.maxLength=3;i.style.cssText='width:64px;text-align:center';return i};
   const sbL1=el('label','sub');sbL1.style.cssText='display:flex;gap:6px;align-items:center';sbL1.appendChild(document.createTextNode('Diproses dianggap batal setelah'));const sbInP=sbMkIn('batasProses',sbBp);sbL1.appendChild(sbInP);sbL1.appendChild(document.createTextNode('hari'));
   const sbL2=el('label','sub');sbL2.style.cssText='display:flex;gap:6px;align-items:center';sbL2.appendChild(document.createTextNode('Selesai belum cair dianggap batal setelah'));const sbInC=sbMkIn('batasCair',sbBc);sbL2.appendChild(sbInC);sbL2.appendChild(document.createTextNode('hari'));
-  const sbBtn=el('button','btn','Terapkan');sbBtn.id='batasTerap';const sbMsg=el('span','sub','');sbMsg.id='batasMsg';
-  sbBtn.onclick=()=>{const a=Number(sbInP.value.trim()),b=Number(sbInC.value.trim());
+  const sbPic=document.createElement('select');sbPic.id='batasPic';sbPic.style.cssText='width:auto';[['','Pilih PIC'],['Dimas','Dimas'],['David','David']].forEach(a=>{const o=document.createElement('option');o.value=a[0];o.textContent=a[1];sbPic.appendChild(o)});try{sbPic.value=localStorage.getItem('hypotech_pj_pic')||''}catch(e){}
+  const sbBtn=el('button','btn','Simpan');sbBtn.id='batasTerap';const sbMsg=el('span','sub','');sbMsg.id='batasMsg';
+  sbBtn.onclick=async()=>{const a=Number(sbInP.value.trim()),b=Number(sbInC.value.trim());
     if(!(Number.isInteger(a)&&a>=1&&a<=365&&Number.isInteger(b)&&b>=1&&b<=365)){sbMsg.textContent='Isi bilangan bulat 1 sampai 365.';sbMsg.style.color='#ff9b9b';return}
-    BATAS.proses=a;BATAS.cair=b;try{localStorage.setItem('hypotech_pj_batas',JSON.stringify(BATAS))}catch(e){}sbMsg.textContent='Memuat ulang…';sbMsg.style.color='';muat()};
-  sbBar.appendChild(sbL1);sbBar.appendChild(sbL2);sbBar.appendChild(sbBtn);sbBar.appendChild(sbMsg);st.appendChild(sbBar);
+    if(!sbPic.value){sbMsg.textContent='Pilih PIC dulu.';sbMsg.style.color='#ff9b9b';return}
+    const u=$('#apiUrl').value.trim(),k=$('#apiKey').value;if(!u||!k){sbMsg.textContent='Belum terhubung: isi Sumber data.';sbMsg.style.color='#ff9b9b';return}
+    try{localStorage.setItem('hypotech_pj_pic',sbPic.value)}catch(e){}
+    sbBtn.disabled=true;sbMsg.textContent='Menyimpan ke Master 2…';sbMsg.style.color='';
+    try{const r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({key:k,op:'pengaturan_simpan',pic:sbPic.value,batas_proses:a,batas_cair:b})});const j=await r.json();if(j.error)throw new Error(j.error);
+      sbMsg.textContent=j.berubah?'Tersimpan di Master 2. Memuat ulang…':'Sudah sama dengan yang tersimpan. Memuat ulang…';await muat()}
+    catch(err){sbBtn.disabled=false;sbMsg.textContent='Gagal menyimpan: '+String(err.message||err)+(/tidak dikenal|Op tidak|op /i.test(String(err.message||err))?' (perbarui Apps Script ke versi terbaru)':'');sbMsg.style.color='#ff9b9b'}};
+  sbBar.appendChild(sbL1);sbBar.appendChild(sbL2);sbBar.appendChild(sbPic);sbBar.appendChild(sbBtn);sbBar.appendChild(sbMsg);st.appendChild(sbBar);
+  const sbJejak=el('div','d',(D.batas&&D.batas.diubah_oleh&&D.batas.diubah_pada)?('Batas ini tersimpan di Master 2 dan berlaku untuk semua admin. Terakhir diubah oleh '+D.batas.diubah_oleh+' pada '+D.batas.diubah_pada+'.'):'Batas ini tersimpan di Master 2 (tab Pengaturan) dan berlaku untuk semua admin.');sbJejak.id='batasJejak';st.appendChild(sbJejak);
   const sbSv=k=>(D.status&&D.status[k])||[],sbG0=(k,j)=>sbSv(k)[j]||0,SB_ALL=['Selesai','Diproses','Retur','Dibatalkan','Batal_Otomatis'];
   const sw=el('div','tw');
   sw.appendChild(table(['Bulan','Selesai','Diproses','Retur','Dibatalkan','Batal otomatis','% batal','Item terjual (pcs)','Belum cair (order)','Belum cair (omzet)'],
@@ -593,11 +601,11 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.que
 $('#cfgBtn').onclick=()=>$('#cfg').classList.toggle('on');
 try{const u=localStorage.getItem('hypotech_v2_api'),k=lihatK();if(u)$('#apiUrl').value=u;if(k)$('#apiKey').value=k}catch(e){}
 
-let BATAS={proses:0,cair:0};try{const b0=JSON.parse(localStorage.getItem('hypotech_pj_batas')||'null');if(b0&&Number.isInteger(b0.proses)&&b0.proses>=1&&b0.proses<=365&&Number.isInteger(b0.cair)&&b0.cair>=1&&b0.cair<=365){BATAS.proses=b0.proses;BATAS.cair=b0.cair}}catch(e){}
+try{localStorage.removeItem('hypotech_pj_batas')}catch(e){}   /* batas hari kini disimpan terpusat di Master 2 (tab Pengaturan), bukan per browser */
 function jsonp(url,key){return new Promise((res,rej)=>{const cb='hv2_'+Date.now();const s=document.createElement('script');const t=setTimeout(()=>{cleanup();rej(new Error('Waktu habis'))},30000);
   function cleanup(){clearTimeout(t);delete window[cb];s.remove()}
   window[cb]=d=>{cleanup();res(d)};s.onerror=()=>{cleanup();rej(new Error('Gagal memuat'))};
-  s.src=url+(url.includes('?')?'&':'?')+'action=penjualan_v2&fresh=1&key='+encodeURIComponent(key)+(RG?'&dari='+RG.dari+'&sampai='+RG.sampai:'')+(BATAS.proses?'&batas_proses='+BATAS.proses+'&batas_cair='+BATAS.cair:'')+'&callback='+cb;document.head.appendChild(s)})}
+  s.src=url+(url.includes('?')?'&':'?')+'action=penjualan_v2&fresh=1&key='+encodeURIComponent(key)+(RG?'&dari='+RG.dari+'&sampai='+RG.sampai:'')+'&callback='+cb;document.head.appendChild(s)})}
 async function muat(){const u=$('#apiUrl').value.trim(),k=$('#apiKey').value;if(!u||!k){$('#cfg').classList.add('on');return}
   $('#badgeTxt').textContent='Memuat…';document.body.classList.add('dim');
   try{const d=await jsonp(u,k);if(d.error)throw new Error(d.error);DATA=Object.assign({},SNAPSHOT,d);F=0;T=DATA.bulan.length-1;bangunPreset();try{localStorage.setItem('hypotech_v2_api',u);simpanK(k)}catch(e){}
