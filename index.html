@@ -640,7 +640,7 @@ async function ikMuat(bulan){const box=$('#c-ik');const u=$('#apiUrl').value.tri
 function ikKpi(l,v,n){const k=el('div','kpi');k.appendChild(el('div','l',l));k.appendChild(el('div','v',v));k.appendChild(el('div','n',n||''));return k}
 function ikRender(){const D2=IKS.d,box=$('#c-ik');box.replaceChildren();
   box.appendChild(el('h3',null,'Iklan & ROAS per produk'));
-  box.appendChild(el('div','d','ROAS platform = omzet iklan menurut marketplace ÷ biaya. ROAS asli = omzet closing SKU yang sudah dipetakan (channel dan bulan sama) ÷ biaya. ROAS impas = omzet ÷ (pendapatan bersih − HPP): iklan menutup modal bila ROAS asli ≥ impas. Order Dibatalkan dan Batal otomatis tidak dihitung; Retur tetap dihitung. Omzet asli mencakup penjualan organik SKU itu juga, jadi baca sebagai tolok ukur, bukan sebab-akibat langsung.'));
+  box.appendChild(el('div','d','ROAS platform = omzet iklan menurut marketplace ÷ biaya. ROAS asli = omzet closing SKU yang sudah dipetakan (channel dan bulan sama) ÷ biaya. Pendapatan bersih = omzet SKU setelah potongan marketplace (proporsi dari order). ROAS impas = omzet ÷ (pendapatan bersih − HPP): iklan menutup modal bila ROAS asli ≥ impas. Order Dibatalkan dan Batal otomatis tidak dihitung; Retur tetap dihitung. Omzet asli mencakup penjualan organik SKU itu juga, jadi baca sebagai tolok ukur, bukan sebab-akibat langsung.'));
   const bar=el('div','bar');bar.style.cssText='display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 6px';
   const sel=document.createElement('select');sel.id='ikBln';const opt=new Set(D2.bulan_tersedia||[]);opt.add(D2.bulan);[...opt].sort().forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=ikBlnTeks(b);if(b===D2.bulan)o.selected=true;sel.appendChild(o)});
   sel.onchange=()=>{IKS.pilih=true;ikMuat(sel.value)};bar.appendChild(el('span','sub','Bulan'));bar.appendChild(sel);
@@ -651,7 +651,7 @@ function ikRender(){const D2=IKS.d,box=$('#c-ik');box.replaceChildren();
   const kp=el('div','kpis');
   kp.appendChild(ikKpi('Biaya iklan',rp(T2.biaya),T2.listing+' listing · '+Object.keys(T2.per_channel).map(c=>c+' '+rp(T2.per_channel[c].biaya)).join(' · ')));
   kp.appendChild(ikKpi('Omzet iklan (platform)',rp(T2.omzet_iklan),'ROAS platform '+ikX(T2.roas_platform)));
-  kp.appendChild(ikKpi('ROAS asli (terpetakan)',ikX(T2.roas_asli),'omzet closing '+rp(T2.omzet_asli)+' dari biaya '+rp(T2.biaya_terpetakan)));
+  kp.appendChild(ikKpi('ROAS asli (terpetakan)',ikX(T2.roas_asli),'omzet closing '+rp(T2.omzet_asli)+(T2.bersih!==undefined?' · pendapatan bersih '+rp(T2.bersih):'')+' dari biaya '+rp(T2.biaya_terpetakan)));
   kp.appendChild(ikKpi('Sudah dipetakan',T2.terpetakan+' dari '+(T2.terpetakan+T2.belum),T2.belum?T2.belum+' listing perlu dipetakan':'semua listing terpetakan'));
   box.appendChild(kp);
   const rk=D2.rekon;if(rk&&rk.biaya_iklan_tab!==null){const ok=Math.abs(rk.selisih)<=1000;box.appendChild(el('div','note','Rekonsiliasi: biaya di Iklan_Produk '+rp(rk.iklan_produk)+' vs tab Biaya_Iklan (GMV Max) '+rp(rk.biaya_iklan_tab)+' → '+(ok?'cocok.':'selisih '+rp(rk.selisih)+'. Biaya_Iklan berasal dari impor pencairan marketplace dan cakupannya bisa berbeda dengan laporan iklan, jadi selisih tidak otomatis salah; cek bila besar.')))}
@@ -693,8 +693,8 @@ function ikRender(){const D2=IKS.d,box=$('#c-ik');box.replaceChildren();
         sv.onclick=()=>{const m=skuDari(t.value);if(!m.length){pesan.textContent='Isi SKU atau "-".';pesan.style.color='#ff9b9b';return}simpan([{channel:x.channel,listing_id:x.listing_id,nama:x.nama,sku:m}],[sv])}};sk.appendChild(eb);
       const nm=el('div',null,x.nama);nm.style.cssText='max-width:320px;white-space:normal';if(x.kecil)nm.appendChild(el('span','sub',' · biaya kecil, belum representatif'));
       const h=el('span',null,x.hasil||'–');if(x.hasil==='Menutup modal')h.style.color='#7bd88f';else if(x.hasil==='Di bawah impas'||x.hasil==='Margin tidak positif')h.style.color='#ff9b9b';
-      return [x.channel==='TIKTOK'?'TikTok':'Shopee',nm,sk,rp(x.biaya),ikX(x.roas_platform),x.roas_langsung===null?'–':ikX(x.roas_langsung),x.omzet_asli===null?'–':rp(x.omzet_asli),ikX(x.roas_asli),ikX(x.roas_impas),h]};
-    const COL=[['Channel','channel'],['Listing','nama'],['SKU','sku'],['Biaya','biaya'],['ROAS platform','roas_platform'],['ROAS langsung','roas_langsung'],['Omzet asli','omzet_asli'],['ROAS asli','roas_asli'],['ROAS impas','roas_impas'],['Hasil','hasil']];
+      return [x.channel==='TIKTOK'?'TikTok':'Shopee',nm,sk,rp(x.biaya),ikX(x.roas_platform),x.roas_langsung===null?'–':ikX(x.roas_langsung),x.omzet_asli===null?'–':rp(x.omzet_asli),x.bersih===null||x.bersih===undefined?'–':rp(x.bersih),ikX(x.roas_asli),ikX(x.roas_impas),h]};
+    const COL=[['Channel','channel'],['Listing','nama'],['SKU','sku'],['Biaya','biaya'],['ROAS platform','roas_platform'],['ROAS langsung','roas_langsung'],['Omzet asli','omzet_asli'],['Pendapatan bersih','bersih'],['ROAS asli','roas_asli'],['ROAS impas','roas_impas'],['Hasil','hasil']];
     const val=(x,k)=>k==='sku'?(x.diabaikan?'(diabaikan)':x.sku.join(', ')):x[k];
     const fb=el('div','bar');fb.style.cssText='display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0';
     const q=document.createElement('input');q.type='text';q.placeholder='Cari listing atau SKU';q.value=F2.q;q.style.cssText='width:230px';
