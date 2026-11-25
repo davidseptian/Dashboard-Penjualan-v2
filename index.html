@@ -686,14 +686,33 @@ function ikRender(){const D2=IKS.d,box=$('#c-ik');box.replaceChildren();
   /* --- ROAS per produk --- */
   const c2=el('div','card');c2.style.marginTop='14px';c2.appendChild(el('h3',null,'ROAS per listing yang sudah dipetakan'));
   if(!D2.baris.length)c2.appendChild(el('div','d','Belum ada listing terpetakan. Setujui pemetaan di atas.'));
-  else{const rows=D2.baris.map(x=>{const sk=el('div');sk.style.cssText='display:flex;gap:6px;align-items:center;flex-wrap:wrap';sk.appendChild(el('span',null,x.diabaikan?'(diabaikan)':x.sku.join(', ')));
+  else{const F2=IKS.f||(IKS.f={q:'',ch:'',hasil:'',k:'biaya',dir:-1});
+    const rowOf=x=>{const sk=el('div');sk.style.cssText='display:flex;gap:6px;align-items:center;flex-wrap:wrap';sk.appendChild(el('span',null,x.diabaikan?'(diabaikan)':x.sku.join(', ')));
       const eb=el('button','btn','Ubah');eb.style.cssText='padding:2px 8px;font-size:11px';
       eb.onclick=()=>{const t=document.createElement('input');t.type='text';t.value=x.diabaikan?'-':x.sku.join(', ');t.style.width='170px';const sv=el('button','btn gold','Simpan');sv.style.cssText='padding:2px 8px;font-size:11px';sk.replaceChildren(t,sv);t.focus();
         sv.onclick=()=>{const m=skuDari(t.value);if(!m.length){pesan.textContent='Isi SKU atau "-".';pesan.style.color='#ff9b9b';return}simpan([{channel:x.channel,listing_id:x.listing_id,nama:x.nama,sku:m}],[sv])}};sk.appendChild(eb);
       const nm=el('div',null,x.nama);nm.style.cssText='max-width:320px;white-space:normal';if(x.kecil)nm.appendChild(el('span','sub',' · biaya kecil, belum representatif'));
       const h=el('span',null,x.hasil||'–');if(x.hasil==='Menutup modal')h.style.color='#7bd88f';else if(x.hasil==='Di bawah impas'||x.hasil==='Margin tidak positif')h.style.color='#ff9b9b';
-      return [x.channel==='TIKTOK'?'TikTok':'Shopee',nm,sk,rp(x.biaya),ikX(x.roas_platform),x.roas_langsung===null?'–':ikX(x.roas_langsung),x.omzet_asli===null?'–':rp(x.omzet_asli),ikX(x.roas_asli),ikX(x.roas_impas),h]});
-    const tw=el('div','tw');tw.appendChild(table(['Channel','Listing','SKU','Biaya','ROAS platform','ROAS langsung','Omzet asli','ROAS asli','ROAS impas','Hasil'],rows));c2.appendChild(tw)}
+      return [x.channel==='TIKTOK'?'TikTok':'Shopee',nm,sk,rp(x.biaya),ikX(x.roas_platform),x.roas_langsung===null?'–':ikX(x.roas_langsung),x.omzet_asli===null?'–':rp(x.omzet_asli),ikX(x.roas_asli),ikX(x.roas_impas),h]};
+    const COL=[['Channel','channel'],['Listing','nama'],['SKU','sku'],['Biaya','biaya'],['ROAS platform','roas_platform'],['ROAS langsung','roas_langsung'],['Omzet asli','omzet_asli'],['ROAS asli','roas_asli'],['ROAS impas','roas_impas'],['Hasil','hasil']];
+    const val=(x,k)=>k==='sku'?(x.diabaikan?'(diabaikan)':x.sku.join(', ')):x[k];
+    const fb=el('div','bar');fb.style.cssText='display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0';
+    const q=document.createElement('input');q.type='text';q.placeholder='Cari listing atau SKU';q.value=F2.q;q.style.cssText='width:230px';
+    const fc=document.createElement('select');[['','Semua channel'],['SHOPEE','Shopee'],['TIKTOK','TikTok']].forEach(a=>{const o=document.createElement('option');o.value=a[0];o.textContent=a[1];fc.appendChild(o)});fc.value=F2.ch;
+    const fh=document.createElement('select');[['','Semua hasil'],['Menutup modal','Menutup modal'],['Di bawah impas','Di bawah impas'],['Margin tidak positif','Margin tidak positif'],['-','Diabaikan']].forEach(a=>{const o=document.createElement('option');o.value=a[0];o.textContent=a[1];fh.appendChild(o)});fh.value=F2.hasil;
+    const cnt=el('span','sub','');const rs=el('button','btn','Reset');
+    const tbox=el('div');
+    const draw=()=>{let L=D2.baris.filter(x=>{if(F2.ch&&x.channel!==F2.ch)return false;if(F2.hasil==='-'){if(!x.diabaikan)return false}else if(F2.hasil&&x.hasil!==F2.hasil)return false;
+        if(F2.q){const t=(x.nama+' '+val(x,'sku')+' '+x.listing_id).toLowerCase();if(!F2.q.toLowerCase().split(/\s+/).every(w=>t.includes(w)))return false}return true});
+      L=L.slice().sort((a,b)=>{const va=val(a,F2.k),vb=val(b,F2.k);if(va===null||va===undefined||va==='')return (vb===null||vb===undefined||vb==='')?0:1;if(vb===null||vb===undefined||vb==='')return -1;
+        return (typeof va==='number'&&typeof vb==='number'?va-vb:String(va).localeCompare(String(vb),'id'))*F2.dir});
+      cnt.textContent=L.length+' dari '+D2.baris.length+' listing';
+      const tw=el('div','tw');tw.appendChild(table(COL.map(c=>c[0]+(F2.k===c[1]?(F2.dir>0?' ▲':' ▼'):'')),L.map(rowOf)));
+      tw.querySelectorAll('th').forEach((th,n)=>{th.style.cursor='pointer';th.title='Klik untuk mengurutkan';th.onclick=()=>{const k=COL[n][1];if(F2.k===k)F2.dir=-F2.dir;else{F2.k=k;F2.dir=(k==='channel'||k==='nama'||k==='sku'||k==='hasil')?1:-1}draw()}});
+      tbox.replaceChildren(tw)};
+    q.oninput=()=>{F2.q=q.value.trim();draw()};fc.onchange=()=>{F2.ch=fc.value;draw()};fh.onchange=()=>{F2.hasil=fh.value;draw()};
+    rs.onclick=()=>{F2.q='';F2.ch='';F2.hasil='';q.value='';fc.value='';fh.value='';draw()};
+    fb.appendChild(q);fb.appendChild(fc);fb.appendChild(fh);fb.appendChild(rs);fb.appendChild(cnt);c2.appendChild(fb);c2.appendChild(tbox);draw()}
   box.appendChild(c2);
   if(D2.otomatis.length){const c3=el('div','card');c3.style.marginTop='14px';c3.appendChild(el('h3',null,'Iklan otomatis / tanpa produk'));c3.appendChild(el('div','d','Iklan otomatis tidak terikat satu produk, jadi tidak dibagi ke SKU. Hanya ROAS platform yang bisa dibaca.'));
     const tw=el('div','tw');tw.appendChild(table(['Channel','Nama iklan','Mode','Biaya','Omzet iklan','ROAS platform','ROAS langsung'],D2.otomatis.map(x=>[x.channel==='TIKTOK'?'TikTok':'Shopee',x.nama,x.mode||'–',rp(x.biaya),rp(x.omzet_iklan),ikX(x.roas_platform),x.roas_langsung===null?'–':ikX(x.roas_langsung)])));c3.appendChild(tw);box.appendChild(c3)}
